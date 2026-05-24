@@ -141,6 +141,54 @@ app.delete("/api/movies/:id", (req: Request, res: Response) => {
     });
 });
 
+app.put("/api/movies/:id", (req: Request, res: Response) => {
+    const targetIdAsString = req.params.id as string;
+    const targetId = parseInt(targetIdAsString);
+
+    if (isNaN(targetId)) {
+        res.status(400).json({
+            success: false,
+            message: "Invalid movie id",
+        });
+        return;
+    }
+
+    const movieIndex = movieDatabase.findIndex((movie) => movie.id === targetId);
+
+    if(movieIndex === -1) {
+        res.status(404).json({
+            success: false,
+            message: `Movie not found for id: ${targetId}`,
+        });
+        return;
+    }
+
+    const { title, genre, releaseYear } = req.body;
+
+    if (!title || !genre || !releaseYear) {
+        res.status(400).json({
+            success: false,
+            message: "Missing required fields: title, genre, releaseYear",
+        });
+        return;
+    }
+
+    const updatedMovie: Movie = {
+        id: targetId,
+        title,
+        genre,
+        releaseYear,
+    };
+
+    movieDatabase[movieIndex] = updatedMovie;
+
+    res.json({
+        success: true,
+        message: `Movie with id ${targetId} updated successfully`,
+        data: updatedMovie,
+    });
+});
+
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
 });
