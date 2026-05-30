@@ -41,15 +41,8 @@ export class MovieController{
     };
 
     createMovie = async (req: Request, res: Response): Promise<void> => {
+        // Zod has already validated these properties exist and match types perfectly!
         const { title, genre, releaseYear } = req.body;
-
-        if (!title || !genre || !releaseYear) {
-            res.status(400).json({
-                success: false,
-                message: "Validation Error: title, genre, and releaseYear are required fields."
-            });
-            return;
-        }
 
         try {
             const newMovie = await this.movieService.addMovie(title, genre, releaseYear);
