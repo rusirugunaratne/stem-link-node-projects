@@ -4,22 +4,23 @@ import { MovieService } from "../services/movie.service.js";
 export class MovieController{
     private movieService = new MovieService();
 
-    // GET /movies
-    getAllMovies = (req: Request, res: Response): void => {
+    getAllMovies = async (req: Request, res: Response): Promise<void> => {
         const genre = req.query.genre as string | undefined;
         const year = req.query.year as string | undefined;
 
-        const movies = this.movieService.getMovies(genre, year);
-
-        res.json({
-            success: true,
-            count: movies.length,
-            data: movies
-        });
+        try {
+            const movies = await this.movieService.getMovies(genre, year);
+            res.json({
+                success: true,
+                count: movies.length,
+                data: movies
+            });
+        } catch (error) {
+            res.status(500).json({ success: false, message: "Internal server error." });
+        }
     };
 
-    // GET /movies/:id
-    getMovieById = (req: Request, res: Response): void => {
+    getMovieById = async (req: Request, res: Response): Promise<void> => {
         const idNumber = parseInt(req.params.id as string, 10);
 
         if (isNaN(idNumber)) {
@@ -28,7 +29,7 @@ export class MovieController{
         }
 
         try {
-            const movie = this.movieService.getMovieById(idNumber);
+            const movie = await this.movieService.getMovieById(idNumber);
             res.json({ success: true, data: movie });
         } catch (error: any) {
             if (error.message === "NOT_FOUND") {
@@ -39,11 +40,9 @@ export class MovieController{
         }
     };
 
-    // POST /movies
-    createMovie = (req: Request, res: Response): void => {
+    createMovie = async (req: Request, res: Response): Promise<void> => {
         const { title, genre, releaseYear } = req.body;
 
-        // Basic validation check
         if (!title || !genre || !releaseYear) {
             res.status(400).json({
                 success: false,
@@ -53,7 +52,7 @@ export class MovieController{
         }
 
         try {
-            const newMovie = this.movieService.addMovie(title, genre, releaseYear);
+            const newMovie = await this.movieService.addMovie(title, genre, releaseYear);
             res.status(201).json({
                 success: true,
                 message: "New movie added successfully!",
@@ -68,8 +67,7 @@ export class MovieController{
         }
     };
 
-    // DELETE /movies/:id
-    deleteMovie = (req: Request, res: Response): void => {
+    deleteMovie = async (req: Request, res: Response): Promise<void> => {
         const idNumber = parseInt(req.params.id as string, 10);
 
         if (isNaN(idNumber)) {
@@ -78,7 +76,7 @@ export class MovieController{
         }
 
         try {
-            const deleted = this.movieService.deleteMovie(idNumber);
+            const deleted = await this.movieService.deleteMovie(idNumber);
             res.json({
                 success: true,
                 message: `Successfully removed movie "${deleted.title}".`,

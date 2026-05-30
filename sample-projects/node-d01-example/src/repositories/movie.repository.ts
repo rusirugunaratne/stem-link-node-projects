@@ -1,32 +1,36 @@
-import { moviesDatabase, type Movie } from "../database/mockDb.js";
+import { prisma } from "../database/prisma.js";
+import type { Movie } from "@prisma/client";
 
 export class MovieRepository{
-    getAll(): Movie[] {
-        return moviesDatabase;
+    async getAll(): Promise<Movie[]> {
+        return await prisma.movie.findMany();
     }
 
-    getById(id: number): Movie | undefined {
-        return moviesDatabase.find((movie) => movie.id === id);
+    async getById(id: number): Promise<Movie | null> {
+        return await prisma.movie.findUnique({
+            where: { id }
+        });
     }
 
-    getByTitle(title: string): Movie | undefined {
-        return moviesDatabase.find((movie) => movie.title.toLowerCase() === title.toLowerCase());
+    async getByTitle(title: string): Promise<Movie | null> {
+        return await prisma.movie.findUnique({
+            where: { title }
+        });
     }
 
-    create(movieData: Omit<Movie, "id">): Movie {
-        const newId = moviesDatabase.length > 0
-            ? Math.max(...moviesDatabase.map(movie => movie.id)) + 1
-            : 1;
-
-        const newMovie: Movie = { id: newId, ...movieData };
-        moviesDatabase.push(newMovie);
-        return newMovie;
+    async create(movieData: Omit<Movie, "id" | "createdAt">): Promise<Movie> {
+        return await prisma.movie.create({
+            data: movieData
+        });
     }
 
-    delete(id: number): Movie | null {
-        const targetIndex = moviesDatabase.findIndex(movie => movie.id === id);
-        if (targetIndex === -1) return null;
-
-        return moviesDatabase.splice(targetIndex, 1)[0] || null;
+    async delete(id: number): Promise<Movie | null> {
+        try {
+            return await prisma.movie.delete({
+                where: { id }
+            });
+        } catch {
+            return null;
+        }
     }
 }

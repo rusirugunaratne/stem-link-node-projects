@@ -1,11 +1,11 @@
 import { MovieRepository } from "../repositories/movie.repository.js";
-import { type Movie } from "../database/mockDb.js";
+import type { Movie } from "@prisma/client";
 
 export class MovieService{
     private movieRepository = new MovieRepository();
 
-    getMovies(genre?: string, year?: string): Movie[] {
-        let movies = this.movieRepository.getAll();
+    async getMovies(genre?: string, year?: string): Promise<Movie[]> {
+        let movies = await this.movieRepository.getAll();
 
         if (genre) {
             movies = movies.filter(m => m.genre.toLowerCase() === genre.toLowerCase());
@@ -21,32 +21,31 @@ export class MovieService{
         return movies;
     }
 
-    getMovieById(id: number): Movie {
-        const movie = this.movieRepository.getById(id);
+    async getMovieById(id: number): Promise<Movie> {
+        const movie = await this.movieRepository.getById(id);
         if (!movie) {
             throw new Error("NOT_FOUND");
         }
         return movie;
     }
 
-    addMovie(title: string, genre: string, releaseYear: number): Movie {
-        // Business Rule: Check for duplicate titles
-        const existingMovie = this.movieRepository.getByTitle(title);
+    async addMovie(title: string, genre: string, releaseYear: number): Promise<Movie> {
+        const existingMovie = await this.movieRepository.getByTitle(title);
         if (existingMovie) {
             throw new Error("DUPLICATE_TITLE");
         }
 
         const parsedYear = parseInt(releaseYear as any, 10);
 
-        return this.movieRepository.create({
+        return await this.movieRepository.create({
             title,
             genre,
             releaseYear: parsedYear
         });
     }
 
-    deleteMovie(id: number): Movie {
-        const deletedMovie = this.movieRepository.delete(id);
+    async deleteMovie(id: number): Promise<Movie> {
+        const deletedMovie = await this.movieRepository.delete(id);
         if (!deletedMovie) {
             throw new Error("NOT_FOUND");
         }
