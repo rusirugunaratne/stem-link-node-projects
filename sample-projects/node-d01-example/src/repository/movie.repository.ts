@@ -1,15 +1,22 @@
-import { movieDatabase, type Movie } from "../database/mockDb.js";
+import type { Movie } from "../generated/prisma/client.js";
+import { movieDatabase, type MovieModel } from "../database/mockDb.js";
+import { prisma } from "../db/prismaClient.js";
 
 export class MovieRepository {
-  getAll(): Movie[] {
-    return movieDatabase;
+  async getAll(): Promise<Movie[]> {
+    return await prisma.movie.findMany();
   }
 
-  getById(id: number): Movie | undefined {
-    return movieDatabase.find((movie) => movie.id === id);
+  async getById(id: number): Promise<Movie | null> {
+    return await prisma.movie.findUnique({
+      where: { id },
+    });
   }
 
-  create(movieData: Omit<Movie, "id">): Movie {
+
+  
+
+  create(movieData: Omit<MovieModel, "id">): MovieModel {
     let newId = 1;
     if (movieDatabase.length > 0) {
       const lastMovie = movieDatabase[movieDatabase.length - 1];
@@ -18,7 +25,7 @@ export class MovieRepository {
       }
     }
 
-    const newMovie: Movie = {
+    const newMovie: MovieModel = {
       id: newId,
       ...movieData,
     };
@@ -28,11 +35,11 @@ export class MovieRepository {
     return newMovie;
   }
 
-  deleteById(id: number): Movie | null {
+  deleteById(id: number): MovieModel | null {
     const movieIndex = movieDatabase.findIndex((movie) => movie.id === id);
 
-    if(movieIndex === -1) {
-        return null;
+    if (movieIndex === -1) {
+      return null;
     }
 
     return movieDatabase.splice(movieIndex, 1)[0] || null;

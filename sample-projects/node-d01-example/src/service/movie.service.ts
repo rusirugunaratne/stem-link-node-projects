@@ -1,11 +1,12 @@
-import type { Movie } from "../database/mockDb.js";
+import type { Movie } from "../generated/prisma/client.js";
+import type { MovieModel } from "../database/mockDb.js";
 import { MovieRepository } from "../repository/movie.repository.js";
 
 export class MovieService {
   private movieRepository = new MovieRepository();
 
-  getMovies(genre?: string, year?: string): Movie[] {
-    let movies = this.movieRepository.getAll();
+  async getMovies(genre?: string, year?: string): Promise<Movie[]> {
+    let movies = await this.movieRepository.getAll();
 
     if (genre) {
       movies = movies.filter(
@@ -14,17 +15,17 @@ export class MovieService {
     }
 
     if (year) {
-      const releaseYear = parseInt(year);
-      if (!isNaN(releaseYear)) {
-        movies = movies.filter((movie) => movie.releaseYear === releaseYear);
+      const releasedYear = parseInt(year);
+      if (!isNaN(releasedYear)) {
+        movies = movies.filter((movie) => movie.releasedYear === releasedYear);
       }
     }
 
     return movies;
   }
 
-  getMovieById(id: number): Movie {
-    const foundMovie = this.movieRepository.getById(id);
+  async getMovieById(id: number): Promise<Movie> {
+    const foundMovie =  await this.movieRepository.getById(id);
 
     if (!foundMovie) {
       throw new Error("NOT_FOUND");
@@ -33,19 +34,19 @@ export class MovieService {
     return foundMovie;
   }
 
-  addMovie(title: string, genre: string, releaseYear: number): Movie {
+  addMovie(title: string, genre: string, releasedYear: number): MovieModel {
     return this.movieRepository.create({
       title,
       genre,
-      releaseYear,
+      releasedYear,
     });
   }
 
-  deleteMovie(id: number): Movie {
+  deleteMovie(id: number): MovieModel {
     const deletedMovie = this.movieRepository.deleteById(id);
 
-    if(!deletedMovie) {
-        throw new Error("NOT_FOUND");
+    if (!deletedMovie) {
+      throw new Error("NOT_FOUND");
     }
 
     return deletedMovie;

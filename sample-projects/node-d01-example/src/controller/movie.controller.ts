@@ -4,11 +4,11 @@ import { MovieService } from "../service/movie.service.js";
 export class MovieController {
   private movieService = new MovieService();
 
-  getAllMovies = (req: Request, res: Response) => {
+  getAllMovies = async (req: Request, res: Response) => {
     const genreQuery = req.query.genre as string;
     const yearQuery = req.query.year as string;
 
-    const movies = this.movieService.getMovies(genreQuery, yearQuery);
+    const movies = await this.movieService.getMovies(genreQuery, yearQuery);
 
     res.json({
       success: true,
@@ -17,7 +17,7 @@ export class MovieController {
     });
   };
 
-  getMovieById = (req: Request, res: Response) => {
+  getMovieById = async (req: Request, res: Response) => {
     const movieIdAsString = req.params.id as string;
     const movieId = parseInt(movieIdAsString);
 
@@ -30,7 +30,7 @@ export class MovieController {
     }
 
     try {
-      const movie = this.movieService.getMovieById(movieId);
+      const movie = await this.movieService.getMovieById(movieId);
 
       res.json({
         success: true,
@@ -52,17 +52,17 @@ export class MovieController {
   };
 
   createMovie = (req: Request, res: Response) => {
-    const { title, genre, releaseYear } = req.body;
+    const { title, genre, releasedYear } = req.body;
 
-    if (!title || !genre || !releaseYear) {
+    if (!title || !genre || !releasedYear) {
       res.status(400).json({
         success: false,
-        message: "Missing required fields: title, genre, releaseYear",
+        message: "Missing required fields: title, genre, releasedYear",
       });
       return;
     }
 
-    const newMovie = this.movieService.addMovie(title, genre, releaseYear);
+    const newMovie = this.movieService.addMovie(title, genre, releasedYear);
 
     res.status(201).json({
       success: true,
