@@ -1,4 +1,5 @@
 import express, { type Request, type Response } from "express";
+import movieRouter from "./routes/movie.routes.js";
 
 interface Movie {
   id: number;
@@ -30,51 +31,51 @@ const app = express();
 const PORT = 3000;
 app.use(express.json());
 
-// [GET] /api/movies?genre=<genr    e> - Get all movies
-app.get("/api/movies", (req: Request, res: Response) => {
-  const genreQuery = req.query.genre as string;
-  const yearQuery = req.query.year as string;
+// // [GET] /api/movies?genre=<genr    e> - Get all movies
+// app.get("/api/movies", (req: Request, res: Response) => {
+//   const genreQuery = req.query.genre as string;
+//   const yearQuery = req.query.year as string;
 
-  let filteredMovies = movieDatabase;
+//   let filteredMovies = movieDatabase;
 
-  if (genreQuery) {
-    filteredMovies = movieDatabase.filter(
-      (movie) =>
-        movie.genre.toLocaleLowerCase() === genreQuery.toLocaleLowerCase(),
-    );
-  }
+//   if (genreQuery) {
+//     filteredMovies = movieDatabase.filter(
+//       (movie) =>
+//         movie.genre.toLocaleLowerCase() === genreQuery.toLocaleLowerCase(),
+//     );
+//   }
 
-  if (yearQuery) {
-    const year = parseInt(yearQuery);
-    if (!isNaN(year)) {
-      filteredMovies = filteredMovies.filter(
-        (movie) => movie.releaseYear === year,
-      );
-    }
-  }
+//   if (yearQuery) {
+//     const year = parseInt(yearQuery);
+//     if (!isNaN(year)) {
+//       filteredMovies = filteredMovies.filter(
+//         (movie) => movie.releaseYear === year,
+//       );
+//     }
+//   }
 
-  res.json(filteredMovies);
-});
+//   res.json(filteredMovies);
+// });
 
-app.get("/api/movies/:id", (req: Request, res: Response) => {
-  const movieIdAsString = req.params.id as string;
-  const movieId = parseInt(movieIdAsString);
+// app.get("/api/movies/:id", (req: Request, res: Response) => {
+//   const movieIdAsString = req.params.id as string;
+//   const movieId = parseInt(movieIdAsString);
 
-  const foundMovie = movieDatabase.find((movie) => movie.id === movieId);
+//   const foundMovie = movieDatabase.find((movie) => movie.id === movieId);
 
-  if (!foundMovie) {
-    res.status(404).json({
-      success: false,
-      message: `Movie not found for id: ${movieId}`,
-    });
-    return;
-  }
+//   if (!foundMovie) {
+//     res.status(404).json({
+//       success: false,
+//       message: `Movie not found for id: ${movieId}`,
+//     });
+//     return;
+//   }
 
-  res.json({
-    success: true,
-    data: foundMovie,
-  });
-});
+//   res.json({
+//     success: true,
+//     data: foundMovie,
+//   });
+// });
 
 app.post("/api/movies", (req: Request, res: Response) => {
   const { title, genre, releaseYear } = req.body;
@@ -125,7 +126,7 @@ app.delete("/api/movies/:id", (req: Request, res: Response) => {
 
   const movieIndex = movieDatabase.findIndex((movie) => movie.id === targetId);
 
-  if(movieIndex === -1) {
+  if (movieIndex === -1) {
     res.status(404).json({
       success: false,
       message: `Movie not found for id: ${targetId}`,
@@ -133,61 +134,63 @@ app.delete("/api/movies/:id", (req: Request, res: Response) => {
     return;
   }
 
-    movieDatabase.splice(movieIndex, 1);
+  movieDatabase.splice(movieIndex, 1);
 
-    res.json({
-        success: true,
-        message: `Movie with id ${targetId} deleted successfully`,
-    });
+  res.json({
+    success: true,
+    message: `Movie with id ${targetId} deleted successfully`,
+  });
 });
 
 app.put("/api/movies/:id", (req: Request, res: Response) => {
-    const targetIdAsString = req.params.id as string;
-    const targetId = parseInt(targetIdAsString);
+  const targetIdAsString = req.params.id as string;
+  const targetId = parseInt(targetIdAsString);
 
-    if (isNaN(targetId)) {
-        res.status(400).json({
-            success: false,
-            message: "Invalid movie id",
-        });
-        return;
-    }
-
-    const movieIndex = movieDatabase.findIndex((movie) => movie.id === targetId);
-
-    if(movieIndex === -1) {
-        res.status(404).json({
-            success: false,
-            message: `Movie not found for id: ${targetId}`,
-        });
-        return;
-    }
-
-    const { title, genre, releaseYear } = req.body;
-
-    if (!title || !genre || !releaseYear) {
-        res.status(400).json({
-            success: false,
-            message: "Missing required fields: title, genre, releaseYear",
-        });
-        return;
-    }
-
-    const updatedMovie: Movie = {
-        id: targetId,
-        title,
-        genre,
-        releaseYear,
-    };
-
-    movieDatabase[movieIndex] = updatedMovie;
-
-    res.json({
-        success: true,
-        message: `Movie with id ${targetId} updated successfully`,
-        data: updatedMovie,
+  if (isNaN(targetId)) {
+    res.status(400).json({
+      success: false,
+      message: "Invalid movie id",
     });
+    return;
+  }
+
+  const movieIndex = movieDatabase.findIndex((movie) => movie.id === targetId);
+
+  if (movieIndex === -1) {
+    res.status(404).json({
+      success: false,
+      message: `Movie not found for id: ${targetId}`,
+    });
+    return;
+  }
+
+  const { title, genre, releaseYear } = req.body;
+
+  if (!title || !genre || !releaseYear) {
+    res.status(400).json({
+      success: false,
+      message: "Missing required fields: title, genre, releaseYear",
+    });
+    return;
+  }
+
+  const updatedMovie: Movie = {
+    id: targetId,
+    title,
+    genre,
+    releaseYear,
+  };
+
+  movieDatabase[movieIndex] = updatedMovie;
+
+  res.json({
+    success: true,
+    message: `Movie with id ${targetId} updated successfully`,
+    data: updatedMovie,
+  });
 });
+
+app.use("/api", movieRouter);
 
 app.listen(PORT, () => {
   console.log(`Server is running on http://localhost:${PORT}`);
