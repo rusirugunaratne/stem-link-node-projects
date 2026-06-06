@@ -1,31 +1,55 @@
 import type { Movie } from "../generated/prisma/client.js";
-import type { MovieModel } from "../database/mockDb.js";
 import { MovieRepository } from "../repository/movie.repository.js";
+import type { GetMoviesQueryInput } from "../schemas/movie.query.schema.js";
 
 export class MovieService {
   private movieRepository = new MovieRepository();
 
+  async getPaginatedMovies(filters: GetMoviesQueryInput) {
+    const parsedYear = filters.year ? parseInt(filters.year, 10) : undefined;
+
+    const { movies, total } = await this.movieRepository.getAllAndCount({
+      page: filters.page,
+      limit: filters.limit,
+      sortBy: filters.sortBy,
+      sortOrder: filters.sortOrder,
+      genre: filters.genre,
+      year: isNaN(parsedYear!) ? undefined : parsedYear,
+    });
+
+    const totalPages = Math.ceil(total / filters.limit);
+
+    return {
+      movies,
+      meta: {
+        totalItems: total,
+        itemCount: movies.length,
+        itemsPerPage: filters.limit,
+        currentPage: filters.page,
+        totalPages,
+      },
+    };
+  }
+
   async getMovies(genre?: string, year?: string): Promise<Movie[]> {
-    let movies = await this.movieRepository.getAll();
+    const filters: { genre?: string; year?: number } = {};
 
     if (genre) {
-      movies = movies.filter(
-        (movie) => movie.genre.toLowerCase() === genre.toLowerCase(),
-      );
+      filters.genre = genre;
     }
 
     if (year) {
-      const releasedYear = parseInt(year);
-      if (!isNaN(releasedYear)) {
-        movies = movies.filter((movie) => movie.releasedYear === releasedYear);
+      const parsedYear = parseInt(year, 10);
+      if (!isNaN(parsedYear)) {
+        filters.year = parsedYear;
       }
     }
 
-    return movies;
+    return await this.movieRepository.getAll(filters);
   }
 
   async getMovieById(id: number): Promise<Movie> {
-    const foundMovie =  await this.movieRepository.getById(id);
+    const foundMovie = await this.movieRepository.getById(id);
 
     if (!foundMovie) {
       throw new Error("NOT_FOUND");
@@ -34,16 +58,31 @@ export class MovieService {
     return foundMovie;
   }
 
-  addMovie(title: string, genre: string, releasedYear: number): MovieModel {
-    return this.movieRepository.create({
+  async addMovie(
+    title: string,
+    genre: string,
+    releasedYear: number,
+    rating?: number,
+    description?: string,
+  ): Promise<Movie> {
+    const existingMovie = await this.movieRepository.getByTitle(title);
+    if (existingMovie) {
+      throw new Error("DUPLICATE_TITLE");
+    }
+
+    const parsedYear = parseInt(releasedYear as any, 10);
+
+    return await this.movieRepository.create({
       title,
       genre,
-      releasedYear,
+      releasedYear: parsedYear,
+      rating: rating ?? 0.0,
+      description: description ?? "No description provided.",
     });
   }
 
-  deleteMovie(id: number): MovieModel {
-    const deletedMovie = this.movieRepository.deleteById(id);
+  async deleteMovie(id: number): Promise<Movie> {
+    const deletedMovie = await this.movieRepository.delete(id);
 
     if (!deletedMovie) {
       throw new Error("NOT_FOUND");
