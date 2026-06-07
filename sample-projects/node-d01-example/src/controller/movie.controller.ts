@@ -51,26 +51,46 @@ export class MovieController {
     }
   };
 
-  createMovie = (req: Request, res: Response) => {
+  createMovie = async (req: Request, res: Response): Promise<void> => {
     const { title, genre, releasedYear } = req.body;
 
     if (!title || !genre || !releasedYear) {
       res.status(400).json({
+        message:
+          "Missing required fields. Please provide title, genre and releasedYear for the movie.",
         success: false,
-        message: "Missing required fields: title, genre, releasedYear",
       });
       return;
     }
 
-    const newMovie = this.movieService.addMovie(title, genre, releasedYear);
+    try {
+      const newMovie = await this.movieService.addMovie(
+        title,
+        genre,
+        releasedYear,
+      );
 
-    res.status(201).json({
-      success: true,
-      data: newMovie,
-    });
+      res.status(201).json({
+        success: true,
+        message: "Movie created successfully",
+        data: newMovie,
+      });
+    } catch (error: any) {
+      if (error.message === "DUPLICATE_TITLE") {
+        res.status(409).json({
+          success: false,
+          message: `A movie with the title "${title}" already exists. Please choose a different title.`,
+        });
+      } else {
+        res.status(500).json({
+          success: false,
+          message: "Internal server error",
+        });
+      }
+    }
   };
 
-  deleteMovie = (req: Request, res: Response) => {
+  deleteMovie = async (req: Request, res: Response): Promise<void> => {
     const movieIdAsString = req.params.id as string;
     const movieId = parseInt(movieIdAsString);
 
@@ -83,7 +103,7 @@ export class MovieController {
     }
 
     try {
-      const deletedMovie = this.movieService.deleteMovie(movieId);
+      const deletedMovie = await this.movieService.deleteMovie(movieId);
 
       res.json({
         success: true,

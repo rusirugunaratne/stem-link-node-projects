@@ -1,10 +1,24 @@
 import type { Movie } from "../generated/prisma/client.js";
-import { movieDatabase, type MovieModel } from "../database/mockDb.js";
 import { prisma } from "../db/prismaClient.js";
 
 export class MovieRepository {
-  async getAll(): Promise<Movie[]> {
-    return await prisma.movie.findMany();
+  async getAll(filters?: { genre?: string; year?: number }): Promise<Movie[]> {
+    const whereClause: any = {};
+
+    if (filters?.genre) {
+      whereClause.genre = {
+        equals: filters.genre, // where genre = genre
+        mode: "insensitive", // case-insensitive match for the genre - Action, action
+      };
+    }
+
+    if (filters?.year) {
+      whereClause.releasedYear = filters.year; // where releasedYear = year
+    }
+
+    return await prisma.movie.findMany({
+      where: whereClause,
+    });
   }
 
   async getById(id: number): Promise<Movie | null> {
@@ -13,35 +27,25 @@ export class MovieRepository {
     });
   }
 
-
-  
-
-  create(movieData: Omit<MovieModel, "id">): MovieModel {
-    let newId = 1;
-    if (movieDatabase.length > 0) {
-      const lastMovie = movieDatabase[movieDatabase.length - 1];
-      if (lastMovie) {
-        newId = lastMovie.id + 1;
-      }
-    }
-
-    const newMovie: MovieModel = {
-      id: newId,
-      ...movieData,
-    };
-
-    movieDatabase.push(newMovie);
-
-    return newMovie;
+  async getByTitle(title: string): Promise<Movie | null> {
+    return await prisma.movie.findUnique({
+      where: { title },
+    });
   }
 
-  deleteById(id: number): MovieModel | null {
-    const movieIndex = movieDatabase.findIndex((movie) => movie.id === id);
+  async create(movieData: Omit<Movie, "id" | "createdAt">): Promise<Movie> {
+    return await prisma.movie.create({
+      data: movieData,
+    });
+  }
 
-    if (movieIndex === -1) {
+  async delete(id: number): Promise<Movie | null> {
+    try {
+      return await prisma.movie.delete({
+        where: { id },
+      });
+    } catch {
       return null;
     }
-
-    return movieDatabase.splice(movieIndex, 1)[0] || null;
   }
 }

@@ -1,31 +1,28 @@
 import type { Movie } from "../generated/prisma/client.js";
-import type { MovieModel } from "../database/mockDb.js";
 import { MovieRepository } from "../repository/movie.repository.js";
 
 export class MovieService {
   private movieRepository = new MovieRepository();
 
   async getMovies(genre?: string, year?: string): Promise<Movie[]> {
-    let movies = await this.movieRepository.getAll();
+    const filters: { genre?: string; year?: number } = {};
 
     if (genre) {
-      movies = movies.filter(
-        (movie) => movie.genre.toLowerCase() === genre.toLowerCase(),
-      );
+      filters.genre = genre;
     }
 
     if (year) {
-      const releasedYear = parseInt(year);
-      if (!isNaN(releasedYear)) {
-        movies = movies.filter((movie) => movie.releasedYear === releasedYear);
+      const parsedYear = parseInt(year);
+      if (!isNaN(parsedYear)) {
+        filters.year = parsedYear;
       }
     }
 
-    return movies;
+    return await this.movieRepository.getAll(filters);
   }
 
   async getMovieById(id: number): Promise<Movie> {
-    const foundMovie =  await this.movieRepository.getById(id);
+    const foundMovie = await this.movieRepository.getById(id);
 
     if (!foundMovie) {
       throw new Error("NOT_FOUND");
@@ -34,16 +31,26 @@ export class MovieService {
     return foundMovie;
   }
 
-  addMovie(title: string, genre: string, releasedYear: number): MovieModel {
-    return this.movieRepository.create({
+  async addMovie(
+    title: string,
+    genre: string,
+    releasedYear: number,
+  ): Promise<Movie> {
+    const existingMovie = await this.movieRepository.getByTitle(title);
+
+    if (existingMovie) {
+      throw new Error("DUPLICATE_TITLE");
+    }
+
+    return await this.movieRepository.create({
       title,
       genre,
       releasedYear,
     });
   }
 
-  deleteMovie(id: number): MovieModel {
-    const deletedMovie = this.movieRepository.deleteById(id);
+  async deleteMovie(id: number): Promise<Movie> {
+    const deletedMovie = await this.movieRepository.delete(id);
 
     if (!deletedMovie) {
       throw new Error("NOT_FOUND");
