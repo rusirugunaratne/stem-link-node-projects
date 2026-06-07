@@ -1,25 +1,52 @@
 import type { Movie } from "../generated/prisma/client.js";
 import { MovieRepository } from "../repository/movie.repository.js";
+import type { GetMoviesQueryInput } from "../schemas/movie.query.schema.js";
 
 export class MovieService {
   private movieRepository = new MovieRepository();
 
-  async getMovies(genre?: string, year?: string): Promise<Movie[]> {
-    const filters: { genre?: string; year?: number } = {};
+  async getPaginatedMovies(filters: GetMoviesQueryInput) {
+    const parsedYear = filters.year ? parseInt(filters.year) : undefined;
 
-    if (genre) {
-      filters.genre = genre;
-    }
+    const { movies, total } = await this.movieRepository.getAll({
+      page: filters.page,
+      limit: filters.limit,
+      sortBy: filters.sortBy,
+      sortOrder: filters.sortOrder,
+      genre: filters.genre,
+      year: parsedYear,
+    });
 
-    if (year) {
-      const parsedYear = parseInt(year);
-      if (!isNaN(parsedYear)) {
-        filters.year = parsedYear;
-      }
-    }
+    const totalPages = Math.ceil(total / filters.limit);
 
-    return await this.movieRepository.getAll(filters);
+    return {
+      movies,
+      meta: {
+        totalItems: total,
+        itemCount: movies.length,
+        itemsPerPage: filters.limit,
+        currentPage: filters.page,
+        totalPages,
+      },
+    };
   }
+
+  // async getMovies(genre?: string, year?: string): Promise<Movie[]> {
+  //   const filters: { genre?: string; year?: number } = {};
+
+  //   if (genre) {
+  //     filters.genre = genre;
+  //   }
+
+  //   if (year) {
+  //     const parsedYear = parseInt(year);
+  //     if (!isNaN(parsedYear)) {
+  //       filters.year = parsedYear;
+  //     }
+  //   }
+
+  //   return await this.movieRepository.getAll(filters);
+  // }
 
   async getMovieById(id: number): Promise<Movie> {
     const foundMovie = await this.movieRepository.getById(id);
@@ -35,6 +62,8 @@ export class MovieService {
     title: string,
     genre: string,
     releasedYear: number,
+    rating?: number,
+    description?: string,
   ): Promise<Movie> {
     const existingMovie = await this.movieRepository.getByTitle(title);
 
@@ -46,6 +75,8 @@ export class MovieService {
       title,
       genre,
       releasedYear,
+      rating: rating ?? 0.0,
+      description: description || "",
     });
   }
 

@@ -1,19 +1,20 @@
 import type { Request, Response } from "express";
 import { MovieService } from "../service/movie.service.js";
+import type { GetMoviesQueryInput } from "../schemas/movie.query.schema.js";
 
 export class MovieController {
   private movieService = new MovieService();
 
   getAllMovies = async (req: Request, res: Response) => {
-    const genreQuery = req.query.genre as string;
-    const yearQuery = req.query.year as string;
+    const queryFilters = req.validated.query as GetMoviesQueryInput;
 
-    const movies = await this.movieService.getMovies(genreQuery, yearQuery);
+    const { movies, meta } =
+      await this.movieService.getPaginatedMovies(queryFilters);
 
     res.json({
       success: true,
       data: movies,
-      count: movies.length,
+      meta,
     });
   };
 
@@ -52,7 +53,8 @@ export class MovieController {
   };
 
   createMovie = async (req: Request, res: Response): Promise<void> => {
-    const { title, genre, releasedYear } = req.body;
+    const { title, genre, releasedYear, rating, description } =
+      req.validated.body;
 
     if (!title || !genre || !releasedYear) {
       res.status(400).json({
@@ -68,6 +70,8 @@ export class MovieController {
         title,
         genre,
         releasedYear,
+        rating,
+        description,
       );
 
       res.status(201).json({

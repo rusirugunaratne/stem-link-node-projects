@@ -1,24 +1,47 @@
 import type { Movie } from "../generated/prisma/client.js";
 import { prisma } from "../db/prismaClient.js";
 
+interface FetchMovieArgs {
+  page: number;
+  limit: number;
+  sortBy: string;
+  sortOrder: "asc" | "desc";
+  genre?: string | undefined;
+  year?: number | undefined;
+}
+
 export class MovieRepository {
-  async getAll(filters?: { genre?: string; year?: number }): Promise<Movie[]> {
+  async getAll(args: FetchMovieArgs): Promise<{movies: Movie[], total: number}> {
+    const {page, limit, sortBy, sortOrder, genre, year} = args;
+
     const whereClause: any = {};
 
-    if (filters?.genre) {
+    if (genre) {
       whereClause.genre = {
-        equals: filters.genre, // where genre = genre
+        equals: genre, // where genre = genre
         mode: "insensitive", // case-insensitive match for the genre - Action, action
       };
     }
 
-    if (filters?.year) {
-      whereClause.releasedYear = filters.year; // where releasedYear = year
+    if (year) {
+      whereClause.releasedYear = year; // where releasedYear = year
     }
 
-    return await prisma.movie.findMany({
-      where: whereClause,
-    });
+    const skip = (page -1 ) * limit;
+
+    const [movies, total] = await prisma.$transaction([
+      prisma.movie.findMany({
+        where: whereClause,
+        skip,
+        take: limit,
+        orderBy: {
+          [sortBy]: sortOrder,
+        },
+      }),
+      prisma.movie.count({where: whereClause}),
+    ])
+
+    return {movies, total}
   }
 
   async getById(id: number): Promise<Movie | null> {

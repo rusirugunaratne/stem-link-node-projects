@@ -17,5 +17,7 @@ model Movie {
   title        String   @unique
   genre        String
   releasedYear Int
+  rating       Float    @default(0.0)
+  description  String   @default("Description not available")
   createdAt    DateTime @default(now())
 }
