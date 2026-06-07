@@ -31,23 +31,6 @@ export class MovieService {
     };
   }
 
-  // async getMovies(genre?: string, year?: string): Promise<Movie[]> {
-  //   const filters: { genre?: string; year?: number } = {};
-
-  //   if (genre) {
-  //     filters.genre = genre;
-  //   }
-
-  //   if (year) {
-  //     const parsedYear = parseInt(year);
-  //     if (!isNaN(parsedYear)) {
-  //       filters.year = parsedYear;
-  //     }
-  //   }
-
-  //   return await this.movieRepository.getAll(filters);
-  // }
-
   async getMovieById(id: number): Promise<Movie> {
     const foundMovie = await this.movieRepository.getById(id);
 
