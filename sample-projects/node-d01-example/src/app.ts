@@ -2,6 +2,7 @@ import express from "express";
 import "dotenv/config";
 import { clerkMiddleware } from "@clerk/express";
 import globalRouter from "./routes/index.js";
+import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -20,6 +21,9 @@ app.use("/api", globalRouter);
 app.use((req, res) => {
   res.status(404).json({ success: false, message: "Route not found" });
 });
+
+// Centralized Error Handler (CRITICAL: This must be mounted last!)
+app.use(errorHandler);
 
 app.listen(PORT, () => {
   console.log(`🚀 Server running smoothly on http://localhost:${PORT}`);

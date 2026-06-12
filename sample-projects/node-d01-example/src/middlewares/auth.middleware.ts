@@ -1,10 +1,12 @@
 import type { Request, Response, NextFunction } from "express";
 import { createClerkClient, getAuth } from "@clerk/express";
 import { UserRepository } from "../repository/user.repository.js";
+import { UnauthorizedError, BadRequestError } from "../errors/appError.js";
+import { catchAsync } from "../utils/catchAsync.js";
 
 // Initialize the Clerk client to fetch profile details when needed
 const clerkClient = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY || ""
+  secretKey: process.env.CLERK_SECRET_KEY || "",
 });
 
 const userRepository = new UserRepository();
@@ -22,41 +24,33 @@ declare global {
   }
 }
 
-export const requireAuth = async (
-  req: Request,
-  res: Response,
-  next: NextFunction
-): Promise<void> => {
-  // 1. Check if the global clerkMiddleware successfully authenticated the token
-  const auth = getAuth(req);
-  const clerkId = auth.userId;
+export const requireAuth = catchAsync(
+  async (req: Request, res: Response, next: NextFunction): Promise<void> => {
+    // 1. Check if the global clerkMiddleware successfully authenticated the token
+    const auth = getAuth(req);
+    const clerkId = auth.userId;
 
-  if (!clerkId) {
-    res.status(401).json({
-      success: false,
-      message: "Unauthorized: Missing or invalid authentication token.",
-    });
-    return;
-  }
+    if (!clerkId) {
+      throw new UnauthorizedError("Missing or invalid authentication token.");
+    }
 
-  try {
     // 2. Check if the user already exists in our local PostgreSQL database
     let localUser = await userRepository.findByClerkId(clerkId);
 
     // 3. If the user does NOT exist in our DB, execute Just-In-Time (JIT) syncing
     if (!localUser) {
-      console.log(`🔄 Syncing new user from Clerk to Local DB (Clerk ID: ${clerkId})`);
+      console.log(
+        `🔄 Syncing new user from Clerk to Local DB (Clerk ID: ${clerkId})`,
+      );
 
       // Fetch full profile info from Clerk API using the authenticated clerkId
       const clerkUser = await clerkClient.users.getUser(clerkId);
 
       const email = clerkUser.emailAddresses[0]?.emailAddress;
       if (!email) {
-        res.status(400).json({
-          success: false,
-          message: "Authentication failed: Clerk user profile does not contain an email address.",
-        });
-        return;
+        throw new BadRequestError(
+          "Clerk user profile does not contain an email address.",
+        );
       }
 
       // Create the user data object conditionally for exactOptionalPropertyTypes
@@ -84,11 +78,5 @@ export const requireAuth = async (
     };
 
     next();
-  } catch (error: any) {
-    console.error("Error inside requireAuth middleware:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error during authentication routing.",
-    });
-  }
-};
+  },
+);
