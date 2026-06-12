@@ -1,5 +1,6 @@
 import express from "express";
 import "dotenv/config";
+import { clerkMiddleware } from "@clerk/express";
 import globalRouter from "./routes/index.js";
 
 const app = express();
@@ -7,6 +8,10 @@ const PORT = process.env.PORT || 3000;
 
 // Parsers
 app.use(express.json());
+
+// Global Clerk Middleware
+// This automatically decrypts and verifies Clerk JWTs passed via the Authorization Header
+app.use(clerkMiddleware());
 
 // API Mounting
 app.use("/api", globalRouter);
