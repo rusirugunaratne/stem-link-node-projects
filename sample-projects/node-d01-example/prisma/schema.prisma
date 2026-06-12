@@ -12,12 +12,4 @@ datasource db {
   provider = "postgresql"
 }
 
-model Movie {
-  id           Int      @id @default(autoincrement())
-  title        String   @unique
-  genre        String
-  releasedYear Int
-  rating       Float    @default(0.0)
-  description  String   @default("Description not available")
-  createdAt    DateTime @default(now())
-}
+// Models will be built here incrementally starting Step 2!

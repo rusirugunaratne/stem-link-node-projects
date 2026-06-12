@@ -8,4 +8,5 @@ const connectionString = process.env.DATABASE_URL as string;
 const pool = new pg.Pool({ connectionString });
 const adapter = new PrismaPg(pool);
 
+// Single instance of prisma shared across the application
 export const prisma = new PrismaClient({ adapter });

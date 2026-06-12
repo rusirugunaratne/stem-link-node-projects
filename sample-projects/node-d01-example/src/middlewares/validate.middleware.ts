@@ -1,6 +1,5 @@
 import type { NextFunction, Request, Response } from "express";
-import { ZodError } from "zod";
-import type { ZodTypeAny } from "zod";
+import { ZodError, type ZodTypeAny } from "zod";
 
 declare global {
   namespace Express {
@@ -15,11 +14,7 @@ declare global {
 }
 
 export const validate = (schema: ZodTypeAny) => {
-  return async (
-    req: Request,
-    res: Response,
-    next: NextFunction,
-  ): Promise<void> => {
+  return async (req: Request, res: Response, next: NextFunction): Promise<void> => {
     try {
       const parsed = (await schema.parseAsync({
         body: req.body,
@@ -37,7 +32,7 @@ export const validate = (schema: ZodTypeAny) => {
     } catch (error) {
       if (error instanceof ZodError) {
         const errorMessages = error.issues.map((err: any) => ({
-          field: err.path.join(".").replace("body.", ""),
+          field: err.path.join(".").replace("body.", "").replace("query.", "").replace("params.", ""),
           message: err.message,
         }));
 
@@ -49,11 +44,7 @@ export const validate = (schema: ZodTypeAny) => {
         return;
       }
 
-      console.error("Unexpected error during validation:", error);
-      res.status(500).json({
-        success: false,
-        message: "Internal server error during validation",
-      });
+      next(error); // Passing to error handler
     }
   };
 };
