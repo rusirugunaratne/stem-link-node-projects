@@ -12,4 +12,14 @@ datasource db {
   provider = "postgresql"
 }
 
-// Models will be built here incrementally starting Step 2!
+model User {
+  id        Int      @id @default(autoincrement())
+  clerkId   String   @unique
+  email     String   @unique
+  firstName String?
+  lastName  String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}

@@ -1,12 +1,15 @@
 import express from "express";
 import "dotenv/config";
 import globalRouter from "./routes/index.js";
+import { clerkMiddleware } from '@clerk/express'
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 // Parsers
 app.use(express.json());
+
+app.use(clerkMiddleware());
 
 // API Mounting
 app.use("/api", globalRouter);
