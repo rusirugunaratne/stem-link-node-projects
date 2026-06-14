@@ -20,6 +20,20 @@ model User {
   lastName  String?
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
+  submissions Submission[]
 
   @@map("users")
+}
+
+model Submission {
+  id Int @id @default(autoincrement())
+  userId Int
+  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title String
+  desciption String @db.Text
+  githubUrl String 
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("submissions")
 }
