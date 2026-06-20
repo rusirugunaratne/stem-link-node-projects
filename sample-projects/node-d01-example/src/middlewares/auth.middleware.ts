@@ -1,13 +1,10 @@
-import { createClerkClient, getAuth } from "@clerk/express";
-import { UserRepository } from "../repository/user.repository.js";
-import type { NextFunction, Request, Response } from "express";
-import { success } from "zod";
+import type { Request, Response, NextFunction } from "express";
+import { getAuth } from "@clerk/express";
+import { UserService } from "../services/user.service.js";
+import { UnauthorizedError } from "../errors/appError.js";
+import { catchAsync } from "../utils/catchAsync.js";
 
-const clerkClient = createClerkClient({
-  secretKey: process.env.CLERK_SECRET_KEY || "",
-});
-
-const userRepository = new UserRepository();
+const userService = new UserService();
 
 declare global {
   namespace Express {
@@ -16,79 +13,31 @@ declare global {
         id: number;
         clerkId: string;
         email: string;
-        firstName?: string | null;
-        lastName?: string | null;
       };
     }
   }
 }
 
-export const requireAuth = async (
+export const requireAuth = catchAsync(async (
   req: Request,
   res: Response,
-  next: NextFunction,
+  next: NextFunction
 ): Promise<void> => {
   const auth = getAuth(req);
   const clerkId = auth.userId;
 
   if (!clerkId) {
-    res.status(401).json({
-      success: false,
-      message: "Unauthorized: No user authenticated",
-    });
-    return;
+    throw new UnauthorizedError("Missing or invalid authentication token.");
   }
 
-  try {
-    let localUser = await userRepository.findByClerkId(clerkId);
+  // Delegate core execution mapping entirely to the service
+  const localUser = await userService.findOrCreateLocalUser(clerkId);
 
-    if (!localUser) {
-      console.log(
-        `No local user found for clerkId: ${clerkId}. Creating new user...`,
-      );
+  req.user = {
+    id: localUser.id,
+    clerkId: localUser.clerkId,
+    email: localUser.email,
+  };
 
-      const clerkUser = await clerkClient.users.getUser(clerkId);
-
-      const email = clerkUser.emailAddresses[0]?.emailAddress;
-
-      if (!email) {
-        res.status(400).json({
-          success: false,
-          message: "User does not have an email address",
-        });
-        return;
-      }
-
-      const userData: any = {
-        clerkId: clerkUser.id,
-        email: email,
-      };
-
-      if (clerkUser.firstName) {
-        userData.firstName = clerkUser.firstName;
-      }
-      if (clerkUser.lastName) {
-        userData.lastName = clerkUser.lastName;
-      }
-
-      localUser = await userRepository.createUser(userData);
-    }
-
-    req.user = {
-      id: localUser.id,
-      clerkId: localUser.clerkId,
-      email: localUser.email,
-      firstName: localUser.firstName,
-      lastName: localUser.lastName,
-    };
-
-    next();
-  } catch (error: any) {
-    console.error("Error in requireAuth middleware:", error);
-    res.status(500).json({
-      success: false,
-      message: "Internal server error during authentication",
-    });
-    return;
-  }
-};
+  next();
+});
