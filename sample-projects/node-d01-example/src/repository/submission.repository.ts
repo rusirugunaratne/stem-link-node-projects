@@ -52,6 +52,25 @@ export class SubmissionRepository {
     });
   }
 
+  async createWithKarma(userId: number, data: any, karmaPoints: number): Promise<Submission> {
+    return await prisma.$transaction(async (tx) => {
+      const submission = await tx.submission.create({
+        data: { userId, ...data },
+      });
+
+      await tx.user.update({
+        where: { id: userId },
+        data: {
+          karmaPoints: {
+            increment: karmaPoints,
+          },
+        },
+      });
+
+      return submission;
+    });
+  }
+
   async update(id: number, data: any): Promise<Submission> {
     return await prisma.submission.update({
       where: { id },

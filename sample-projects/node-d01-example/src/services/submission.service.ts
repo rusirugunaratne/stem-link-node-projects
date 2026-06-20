@@ -1,16 +1,18 @@
 import { SubmissionRepository } from "../repository/submission.repository.js";
+import { UserRepository } from "../repository/user.repository.js"; // 1. Import UserRepository
 import { NotFoundError, ForbiddenError } from "../errors/appError.js";
 import type { Submission } from "../generated/prisma/client.js";
-import type { 
-  CreateSubmissionInput, 
-  GetSubmissionsQueryInput 
+import type {
+  CreateSubmissionInput,
+  GetSubmissionsQueryInput
 } from "../models/submission.schema.js";
+import { logger } from "../config/logger.js"; // Import your step 1 logger
 
 const submissionRepo = new SubmissionRepository();
+const userRepo = new UserRepository(); // 2. Instantiate UserRepository
 
-export class SubmissionService {
+export class SubmissionService{
   async getAllSubmissions(filters: GetSubmissionsQueryInput) {
-    // Business logic for pagination metadata can live here or in the controller
     return await submissionRepo.getAll(filters);
   }
 
@@ -22,14 +24,19 @@ export class SubmissionService {
     return submission;
   }
 
+  // 3. Refactor submission creation to weave in our gamification policy
   async createSubmission(userId: number, data: CreateSubmissionInput): Promise<Submission> {
-    return await submissionRepo.create(userId, data);
+    // Execute creation and karma update atomically within a single database transaction
+    const submission = await submissionRepo.createWithKarma(userId, data, 2);
+
+    logger.info(`✨ Karma points updated (+2) for user ID: ${userId} due to new submission (Transaction Successful)`);
+
+    return submission;
   }
 
   async updateSubmission(id: number, userId: number, data: CreateSubmissionInput): Promise<Submission> {
     const submission = await this.getSubmissionById(id);
 
-    // Authorization Rule: Only the resource owner can mutate it
     if (submission.userId !== userId) {
       throw new ForbiddenError("Forbidden: You do not own this submission.");
     }
@@ -40,7 +47,6 @@ export class SubmissionService {
   async deleteSubmission(id: number, userId: number): Promise<void> {
     const submission = await this.getSubmissionById(id);
 
-    // Authorization Rule: Only the resource owner can delete it
     if (submission.userId !== userId) {
       throw new ForbiddenError("Forbidden: You do not own this submission.");
     }
