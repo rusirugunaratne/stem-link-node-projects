@@ -13,6 +13,9 @@ declare global {
         id: number;
         clerkId: string;
         email: string;
+        karmaPoints: number;
+        nickname: string | null;
+        profileImageUrl: string | null;
       };
     }
   }
@@ -37,6 +40,9 @@ export const requireAuth = catchAsync(async (
     id: localUser.id,
     clerkId: localUser.clerkId,
     email: localUser.email,
+    karmaPoints: localUser.karmaPoints,
+    nickname: localUser.nickname,
+    profileImageUrl: localUser.profileImageUrl,
   };
 
   next();

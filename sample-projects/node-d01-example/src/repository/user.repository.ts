@@ -26,4 +26,12 @@ export class UserRepository{
       },
     });
   }
+
+  // New method to handle changing profile fields securely
+  async updateUser(userId: number, data: any): Promise<User> {
+    return await prisma.user.update({
+      where: { id: userId },
+      data,
+    });
+  }
 }
