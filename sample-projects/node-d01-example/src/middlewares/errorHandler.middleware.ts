@@ -1,26 +1,18 @@
 import type { Request, Response, NextFunction } from "express";
 import { AppError } from "../errors/appError.js";
+import { logger } from "../config/logger.js"; // Import logger
 
-export const errorHandler = (
-  err: Error,
-  req: Request,
-  res: Response,
-  next: NextFunction
-): void => {
-  // If it's a known operational error we threw on purpose, use its code and message
+export const errorHandler = (err: Error, req: Request, res: Response, next: NextFunction): void => {
   if (err instanceof AppError) {
     res.status(err.statusCode).json({
       success: false,
-      error: {
-        message: err.message,
-        code: err.constructor.name,
-      },
+      error: { message: err.message, code: err.constructor.name },
     });
     return;
   }
 
-  // Handle unexpected or structural failures gracefully (like DB connection failure or syntax bugs)
-  console.error("❌ CRITICAL UNHANDLED SYSTEM ERROR:", err);
+  // Upgrade critical unhandled trace logging to a production log target
+  logger.error(`❌ CRITICAL UNHANDLED SYSTEM ERROR: ${err.message}`, { stack: err.stack });
 
   res.status(500).json({
     success: false,
