@@ -9,6 +9,6 @@ const controller = new SubmissionController();
 
 submissionRouter.post("/", requireAuth, validate(createSubmissionSchema), controller.create);
 submissionRouter.get("/", validate(getSubmissionsQuerySchema), controller.getAll);
-// put, delete -> remember: only the user who created the submission can do edits to that submission
+// put, delete and get submission by id-> remember: only the user who created the submission can do edits to that submission
 
 export default submissionRouter;

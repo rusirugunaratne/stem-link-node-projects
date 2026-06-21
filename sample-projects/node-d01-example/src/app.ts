@@ -3,9 +3,31 @@ import "dotenv/config";
 import globalRouter from "./routes/index.js";
 import { clerkMiddleware } from '@clerk/express'
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
+import type { CorsOptions } from "cors";
+import cors from "cors";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : [];
+
+const corsOptions: CorsOptions = {
+  origin: (origin, callback) => {
+    if (!origin) {
+      callback(null, true);
+      return;
+    }
+
+    if (allowedOrigins.includes(origin)) {
+      callback(null, true);
+    } else {
+      callback(new Error("Not allowed by CORS"));
+    }
+  },
+  credentials: true
+}
+
+app.use(cors(corsOptions));
 
 // Parsers
 app.use(express.json());
