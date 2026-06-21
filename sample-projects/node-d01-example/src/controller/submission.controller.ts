@@ -1,6 +1,6 @@
 import type { Request, Response } from "express";
 import { SubmissionService } from "../service/submission.service.js";
-import type { CreateSubmissionInput, GetSubmissionsQueryInput } from "../models/submission.schema.js";
+import type { CreateSubmissionInput, GetSubmissionsQueryInput, UpdateSubmissionInput } from "../models/submission.schema.js";
 import { catchAsync } from "../utils/catchAsync.js";
 
 const submissionService = new SubmissionService();
@@ -12,7 +12,7 @@ export class SubmissionController {
 
         const newPost = await submissionService.createSubmission(authenticatedUserId, body);
         res.status(201).json({ success: true, data: newPost });
-    })
+    });
 
     getAll = catchAsync(async (req: Request, res: Response): Promise<void> => {
         const filters = req.validated.query as GetSubmissionsQueryInput;
@@ -29,5 +29,28 @@ export class SubmissionController {
                 itemsPerPage: filters.limit
             },
         });
+    });
+
+    getById = catchAsync(async (req: Request, res: Response): Promise<void> => {
+        const id = req.validated.params.id;
+        const submission = await submissionService.getSubmissionById(id);
+        res.json({ success: true, data: submission });
+    });
+
+    update = catchAsync(async (req: Request, res: Response): Promise<void> => {
+        const id = req.validated.params.id;
+        const body = req.validated.body as UpdateSubmissionInput;
+        const authenticatedUserId = req.user!.id;
+
+        const updated = await submissionService.updateSubmission(id, authenticatedUserId, body);
+        res.json({ success: true, data: updated });
+    });
+
+    delete = catchAsync(async (req: Request, res: Response): Promise<void> => {
+        const id = req.validated.params.id;
+        const authenticatedUserId = req.user!.id;
+
+        await submissionService.deleteSubmission(id, authenticatedUserId);
+        res.json({ success: true, message: "Submission deleted successfully" });
     });
 }
