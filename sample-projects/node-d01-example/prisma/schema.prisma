@@ -30,7 +30,7 @@ model Submission {
   userId Int
   user User @relation(fields: [userId], references: [id], onDelete: Cascade)
   title String
-  desciption String @db.Text
+  description String @db.Text
   githubUrl String 
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
