@@ -5,9 +5,13 @@ import { clerkMiddleware } from '@clerk/express'
 import { errorHandler } from "./middlewares/errorHandler.middleware.js";
 import type { CorsOptions } from "cors";
 import cors from "cors";
+import { morganMiddleware } from "./middlewares/morgan.middleware.js";
+import { logger } from "./config/logger.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
+
+app.use(morganMiddleware);
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : [];
 
@@ -45,5 +49,5 @@ app.use((req, res) => {
 app.use(errorHandler);
 
 app.listen(PORT, () => {
-  console.log(`🚀 Server running smoothly on http://localhost:${PORT}`);
+  logger.info(`🚀 Code Critique Server running perfectly on http://localhost:${PORT}`);
 });

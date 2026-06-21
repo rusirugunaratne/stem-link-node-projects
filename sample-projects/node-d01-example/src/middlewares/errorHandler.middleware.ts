@@ -1,5 +1,6 @@
 import type { NextFunction, Request, Response } from "express"
 import { AppError } from "../errors/appError.js"
+import { logger } from "../config/logger.js";
 
 export const errorHandler = (
     err: Error,
@@ -8,7 +9,7 @@ export const errorHandler = (
     next: NextFunction
 ): void => {
     if (err instanceof AppError) {
-        console.error("Found app error: ", err.message);
+        logger.error("Found app error: ", err.message);
         res.status(err.statusCode).json({
             success: false,
             error: err.message
@@ -16,7 +17,7 @@ export const errorHandler = (
         return;
     }
 
-    console.error("An unhandled error has been caught", err);
+    logger.error("An unhandled error has been caught", err);
 
     res.status(500).json({
         success: false,

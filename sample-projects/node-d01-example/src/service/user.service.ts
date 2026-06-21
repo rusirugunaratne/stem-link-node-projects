@@ -2,6 +2,7 @@ import { createClerkClient } from "@clerk/express";
 import { UserRepository } from "../repository/user.repository.js";
 import type { User } from "../generated/prisma/client.js";
 import { BadRequestError } from "../errors/appError.js";
+import { logger } from "../config/logger.js";
 
 const clerkClient = createClerkClient({
   secretKey: process.env.CLERK_SECRET_KEY || "",
@@ -15,7 +16,7 @@ export class UserService{
 
     // 2. Fallback to Just-In-Time profile sync if missing
     if (!localUser) {
-      console.log(`🔄 Syncing new user from Clerk to Local DB (Clerk ID: ${clerkId})`);
+      logger.info(`🔄 Syncing new user from Clerk to Local DB (Clerk ID: ${clerkId})`);
       const clerkUser = await clerkClient.users.getUser(clerkId);
       const email = clerkUser.emailAddresses[0]?.emailAddress;
 
