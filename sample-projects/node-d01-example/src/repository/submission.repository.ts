@@ -1,11 +1,31 @@
 import { prisma } from "../config/prisma.js";
+import type { Submission } from "../generated/prisma/client.js";
 import type { CreateSubmissionInput, GetSubmissionsQueryInput } from "../models/submission.schema.js";
 
 export class SubmissionRepository {
-    async create(userId: number, data: CreateSubmissionInput) {
+    async create(userId: number, data: CreateSubmissionInput): Promise<Submission> {
         return await prisma.submission.create({
             data: { userId, ...data }
         });
+    }
+
+    async createWithKarma(userId: number, data: CreateSubmissionInput, karmaPoints: number): Promise<Submission> {
+        return await prisma.$transaction(async (tx) => {
+            const submission = await tx.submission.create({
+                data: {userId, ...data}
+            });
+
+            await tx.user.update({
+                where: {id: userId},
+                data: {
+                    karmaPoints: {
+                        increment: karmaPoints
+                    }
+                }
+            });
+
+            return submission;
+        })
     }
 
     async getAll(filters: GetSubmissionsQueryInput) {

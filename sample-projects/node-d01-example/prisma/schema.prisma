@@ -13,27 +13,30 @@ datasource db {
 }
 
 model User {
-  id        Int      @id @default(autoincrement())
-  clerkId   String   @unique
-  email     String   @unique
-  firstName String?
-  lastName  String?
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
-  submissions Submission[]
+  id              Int          @id @default(autoincrement())
+  clerkId         String       @unique
+  email           String       @unique
+  firstName       String?
+  lastName        String?
+  karmaPoints     Int          @default(0)
+  nickname        String?
+  profileImageUrl String?
+  createdAt       DateTime     @default(now())
+  updatedAt       DateTime     @updatedAt
+  submissions     Submission[]
 
   @@map("users")
 }
 
 model Submission {
-  id Int @id @default(autoincrement())
-  userId Int
-  user User @relation(fields: [userId], references: [id], onDelete: Cascade)
-  title String
-  description String @db.Text
-  githubUrl String 
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id          Int      @id @default(autoincrement())
+  userId      Int
+  user        User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title       String
+  description String   @db.Text
+  githubUrl   String
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
 
   @@map("submissions")
 }

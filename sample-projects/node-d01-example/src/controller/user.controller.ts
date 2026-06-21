@@ -9,4 +9,7 @@ export class UserController {
     });
     return;
   };
+
+  // update profile function
+  // nickname, profileImageUrl
 }
