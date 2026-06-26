@@ -112,6 +112,7 @@ Render supports **Infrastructure as Code** using a `render.yaml` file. This lets
 services:
   - type: web
     name: stem-link-api
+    plan: free
     runtime: node
     buildCommand: npm install && npm run build && npx prisma migrate deploy
     startCommand: npm run start
