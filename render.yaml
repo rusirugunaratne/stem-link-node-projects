@@ -3,7 +3,7 @@ services:
     name: stem-link-api
     plan: free
     runtime: node
-    buildCommand: npm install && npm run build && npx prisma migrate deploy
+    buildCommand: npm install --production=false && npm run build && npx prisma migrate deploy
     startCommand: npm run start
     rootDir: sample-projects/node-d01-example
     envVars:

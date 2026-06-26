@@ -53,7 +53,7 @@ Prisma is configured to use PostgreSQL. You can create a free PostgreSQL instanc
    - **Language**: `Node`
    - **Branch**: Select your current branch (e.g., `node-d06-testing` or `main`).
    - **Root Directory**: `sample-projects/node-d01-example` *(Crucial for monorepo setup)*
-   - **Build Command**: `npm install && npm run build`
+   - **Build Command**: `npm install --production=false && npm run build`
    - **Start Command**: `npm run start`
    - **Instance Type**: Select the **Free** tier.
 4. Click **Advanced** to add environment variables.
@@ -90,7 +90,7 @@ Prisma requires applying migrations to your database schema in production. You c
 ### Option A: Automate in Build Command (Recommended)
 Change your Web Service's **Build Command** on Render to:
 ```bash
-npm install && npm run build && npx prisma migrate deploy
+npm install --production=false && npm run build && npx prisma migrate deploy
 ```
 This guarantees that your database schema is updated every time a new version of the API is built and deployed.
 
@@ -114,7 +114,7 @@ services:
     name: stem-link-api
     plan: free
     runtime: node
-    buildCommand: npm install && npm run build && npx prisma migrate deploy
+    buildCommand: npm install --production=false && npm run build && npx prisma migrate deploy
     startCommand: npm run start
     rootDir: sample-projects/node-d01-example
     envVars:
@@ -150,3 +150,35 @@ databases:
 3. Click **New Blueprint Instance** and connect your repository.
 4. Render will auto-detect the `render.yaml` file, spin up the PostgreSQL database, and build/run your Web Service, auto-linking the `DATABASE_URL`.
 5. Enter the values for Clerk and R2 variables when prompted in the UI, then deploy!
+
+---
+
+## 7. GitHub Actions CI/CD Deployment
+
+You can automate deployments using GitHub Actions and Render's **Deploy Hooks**.
+
+### Step 1: Get the Deploy Hook URL from Render
+1. Go to your Render Dashboard.
+2. Select your **Web Service** (`stem-link-api`).
+3. In the sidebar, click on **Settings**.
+4. Scroll down to find the **Deploy Hook** section and copy the unique URL.
+   * *Note: If you deployed via a Blueprint, you will need to click on the individual Web Service resource within the Blueprint to see its settings.*
+
+### Step 2: Disable Auto-Deploy on Render
+To prevent double-deployments (once from GitHub's automatic webhook and once from GitHub Actions), you should disable Render's automatic deployment:
+1. In the Web Service **Settings** page on Render, find **Auto-Deploy**.
+2. Set it to **No**.
+
+### Step 3: Add the Deploy Hook to GitHub Secrets
+1. Go to your GitHub repository page.
+2. Navigate to **Settings** -> **Secrets and variables** -> **Actions**.
+3. Click **New repository secret**.
+4. Set the **Name** to: `RENDER_DEPLOY_HOOK_URL`
+5. Paste the Deploy Hook URL as the **Secret** value.
+6. Click **Add secret**.
+
+### Step 4: Run the Workflow
+A workflow file has been created at `.github/workflows/deploy.yml`. When you push to the `main` or `node-d06-testing` branch:
+1. GitHub Actions will install Node.js dependencies and build the TypeScript project (`npm run build`) to ensure there are no compilation errors.
+2. If the build succeeds, GitHub Actions triggers the Render Deploy Hook using `curl`, initiating the deployment on Render.
+
