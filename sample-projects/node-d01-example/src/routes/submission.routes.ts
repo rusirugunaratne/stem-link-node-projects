@@ -10,12 +10,13 @@ import {
   updateSubmissionSchema
 } from "../models/submission.schema.js";
 import { createCommentSchema, getCommentsSchema } from "../models/comment.schema.js";
+import { sensitiveActionRateLimiter } from "../middlewares/rateLimiter.middleware.js";
 
 const submissionRouter = Router();
 const controller = new SubmissionController();
 const commentController = new CommentController();
 
-submissionRouter.post("/", requireAuth, validate(createSubmissionSchema), controller.create);
+submissionRouter.post("/", requireAuth, sensitiveActionRateLimiter, validate(createSubmissionSchema), controller.create);
 submissionRouter.get("/", validate(getSubmissionsQuerySchema), controller.getAll);
 submissionRouter.get("/:id", validate(submissionIdParamSchema), controller.getById);
 submissionRouter.put("/:id", requireAuth, validate(updateSubmissionSchema), controller.update);

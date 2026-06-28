@@ -2,6 +2,7 @@ import { Router } from "express";
 import { StorageController } from "../controller/storage.controller.js";
 import { requireAuth } from "../middlewares/auth.middleware.js";
 import { upload } from "../config/storage.js";
+import { sensitiveActionRateLimiter } from "../middlewares/rateLimiter.middleware.js";
 
 const storageRouter = Router();
 const storageController = new StorageController();
@@ -11,6 +12,7 @@ const storageController = new StorageController();
 storageRouter.post(
   "/upload",
   requireAuth,
+  sensitiveActionRateLimiter,
   upload.single("file"),
   storageController.uploadFile
 );

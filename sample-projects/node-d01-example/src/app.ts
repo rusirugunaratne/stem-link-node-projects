@@ -7,11 +7,14 @@ import type { CorsOptions } from "cors";
 import cors from "cors";
 import { morganMiddleware } from "./middlewares/morgan.middleware.js";
 import { logger } from "./config/logger.js";
+import { globalRateLimiter } from "./middlewares/rateLimiter.middleware.js";
 
 const app = express();
 const PORT = process.env.PORT || 3000;
 
 app.use(morganMiddleware);
+
+app.use("/api", globalRateLimiter);
 
 const allowedOrigins = process.env.ALLOWED_ORIGINS ? process.env.ALLOWED_ORIGINS.split(",") : [];
 
