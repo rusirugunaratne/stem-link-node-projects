@@ -3,7 +3,7 @@ import { logger } from "../config/logger.js";
 
 export const globalRateLimiter = rateLimit({
     windowMs: 15 * 60 * 1000, // 15 minutes
-    max: 5,
+    max: 100,
     standardHeaders: true,
     legacyHeaders: false,
     message: {
@@ -18,7 +18,7 @@ export const globalRateLimiter = rateLimit({
 
 export const sensitiveActionRateLimiter = rateLimit({
     windowMs: 1 * 60 * 1000, // 1 minutes
-    max: 2,
+    max: 5,
     standardHeaders: true,
     legacyHeaders: false,
     message: {
